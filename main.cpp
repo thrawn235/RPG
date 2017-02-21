@@ -670,8 +670,6 @@ void LazyEngine::SetQuit(bool newQuit)
  
 /* Menu Is not a GameObject. It is supposed to exist in another GameOjbect*/
 
-//Idea: The Menu could have a pointer to a sub menu!
-
 class Menu
 {
 protected:
@@ -685,7 +683,6 @@ protected:
 	SDL_Color TextColor;
 	bool mouseOver;
 	int mouseOverEntry;
-	//int highlitedEntry;
 	bool vertical;  //horizontal menus span the entire Screen
 	vector<Menu*> subMenus;
 	bool active;
@@ -917,27 +914,24 @@ void Menu::Update()
 	
 	for(unsigned int i = 0; i < Entries.size(); i++)
 	{
-		if(Clicked(i))
+		for(unsigned int u = 0; u < subMenus.size(); u++)
 		{
-			/*if(!CheckChildrenForFocus())
-			{
-				focus = false;
-				active = false;
-			}*/
-			for(unsigned int u = 0; u < subMenus.size(); u++)
-			{
+			
 				if(subMenus[u]->GetEntryPos() == i)
 				{
 					if(!subMenus[u]->IsActive())
 					{
-						subMenus[u]->SetPosToMousePos();
-						subMenus[u]->SetActive(true);
-						focus = false;
-						subMenus[u]->SetFocus(true);
+						if(Clicked(i))
+						{
+							subMenus[u]->SetPosToMousePos();
+							subMenus[u]->SetActive(true);
+							focus = false;
+							subMenus[u]->SetFocus(true);
+						}
 					}
 				}
-			}
 		}
+		
 	}
 	
 	for(unsigned int i = 0; i < subMenus.size(); i++)
@@ -956,17 +950,20 @@ void Menu::AddSubMenu(Menu* newMenu, int newEntryPos)
 	subMenus.push_back(newMenu);
 }
 bool Menu::Clicked(int checkEntry)
-{
-	
+{	
 	if(MouseOver() && Engine->Input->LeftMouse() && focus)
 	{
-		for(unsigned int i = 0; i < Entries.size(); i++)
-		{
-			if(MouseOverEntry() == checkEntry)
+			for(unsigned int i = 0; i < Entries.size(); i++)
 			{
-				return true;
+				if(MouseOverEntry() == checkEntry)
+				{
+					if(SDL_GetTicks() - lastInputTime > 200)
+					{
+						lastInputTime = SDL_GetTicks();
+						return true;
+					}
+				}
 			}
-		}
 	}
 	return false;
 }
