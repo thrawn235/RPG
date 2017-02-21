@@ -1660,6 +1660,11 @@ int main( int argc, char* args[] )
 		RenderStartTime = SDL_GetTicks();
 		Engine->PollEvents();
 		
+		if(Engine->Input->KeyDown(SDLK_ESCAPE))
+		{
+			Engine->SetQuit(true);
+		}
+		
 		Engine->Graphics->BeginRender();
 		
 		
