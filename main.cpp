@@ -665,12 +665,604 @@ void LazyEngine::SetQuit(bool newQuit)
 //======================================Menu=============================================
 //=======================================================================================
 
+
+class UIElement
+{
+	protected:
+	LazyEngine* Engine;
+	vec2 pos;
+	int width;
+	int height;
+	bool spanHorizontal;
+	bool spanVertical;
+	bool active; //visible and interactable
+	bool focus;
+	UIElement* ParentElement;
+	SDL_Color BorderColor;
+	SDL_Color BackgroundColor;
+	int lastInputTime;
+	int inputCoolDown;
+	
+	public:
+	UIElement(LazyEngine* newEngine);
+	virtual void Update();
+	virtual void Show();
+	virtual bool MouseOver();
+	virtual bool IsActive();
+	virtual bool HasFocus();
+	virtual void SetSpanHorizontal(bool newSpanHorizontal);
+	virtual void SetSpanVertical(bool newSpanVertical);
+	virtual bool HasParent();
+	virtual bool HasChildren();
+	virtual bool CheckChildrenForFocus();
+	virtual void SetBorderColor(int R, int G, int B, int A);
+	virtual void SetBackgroundColor(int R, int G, int B, int A);
+	virtual bool Clicked(); //focus logic
+	virtual bool CoolingDown();
+	virtual void SetActive(bool newActive);
+	virtual void SetFocus(bool newFocus);
+	virtual void ToggleActive();
+	virtual void ToggleFocus();
+	virtual bool GetActive();
+	virtual bool GetFocus();
+	virtual void SetPosToMousePos();
+	virtual void SetPos(vec2 newPos);
+	virtual vec2 GetPos();
+	virtual int GetWidth();
+	virtual int GetHeight();
+	virtual void SetWidth(int newWidth);
+	virtual void SetHeight(int newHeight);
+	virtual void SetParentElement(UIElement* newParent);
+};
+
+UIElement::UIElement(LazyEngine* newEngine)
+{
+	Engine = newEngine;
+	pos = {0,0};
+	width = 20;
+	height = 50;
+	spanHorizontal = false;
+	spanVertical = false;
+	active = true; //visible and interactable
+	focus = true;
+	ParentElement = NULL;
+	BorderColor = {255,255,255,255};
+	BackgroundColor = {100,100,100,255};
+	lastInputTime = 0;
+	inputCoolDown = 200;
+}
+void UIElement::Update()
+{
+	if(active)
+	{
+		Show();
+	}
+}
+void UIElement::Show()
+{
+	if(MouseOver())
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, BackgroundColor.r, BackgroundColor.g, BackgroundColor.b);
+	}
+	else
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, BackgroundColor.r/2, BackgroundColor.g/2, BackgroundColor.b/2);
+	}
+	if(focus)
+	{
+		Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, 200, 0, 0);
+	}
+	else
+	{
+		Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, BorderColor.r, BorderColor.g, BorderColor.b);
+	}
+}
+bool UIElement::MouseOver()
+{
+	if(Engine->Input->GetMousePos().x >= pos.x && Engine->Input->GetMousePos().y >= pos.y && Engine->Input->GetMousePos().x < pos.x + width && Engine->Input->GetMousePos().y < pos.y + height)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+bool UIElement::IsActive()
+{
+	return active;
+}
+bool UIElement::HasFocus()
+{
+	return focus;
+}
+void UIElement::SetSpanHorizontal(bool newSpanHorizontal)
+{
+	spanHorizontal = newSpanHorizontal;
+	if(spanHorizontal)
+	{
+		if(ParentElement == NULL)
+		{
+			width = Engine->Graphics->GetHorizontalResolution();
+		}
+		else
+		{
+			width = ParentElement->GetWidth() - 6;
+		}
+	}
+}
+void UIElement::SetSpanVertical(bool newSpanVertical)
+{
+	spanVertical = newSpanVertical;
+	if(spanVertical)
+	{
+		if(ParentElement == NULL)
+		{
+			height = Engine->Graphics->GetVerticalResolution();
+		}
+		else
+		{
+			height = ParentElement->GetHeight() - 6;
+		}
+	}
+}
+bool UIElement::HasParent()
+{
+	if(ParentElement == NULL)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+bool UIElement::HasChildren()
+{
+	return false; //only Lists can have Children
+}
+bool UIElement::CheckChildrenForFocus()
+{
+	return false; // Cant have children anyway
+}
+void UIElement::SetBorderColor(int R, int G, int B, int A)
+{
+	BorderColor.r = R;
+	BorderColor.g = G;
+	BorderColor.b = B;
+	BorderColor.a = A;
+}
+void UIElement::SetBackgroundColor(int R, int G, int B, int A)
+{
+	BackgroundColor.r = R;
+	BackgroundColor.g = G;
+	BackgroundColor.b = B;
+	BackgroundColor.a = A;
+}
+bool UIElement::Clicked()
+{
+	if(MouseOver() && Engine->Input->LeftMouse())
+	{
+		if(!CoolingDown())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+bool UIElement::CoolingDown()
+{
+	if(SDL_GetTicks() - lastInputTime > inputCoolDown)
+	{
+		return false; //ready for Input
+	}
+	else
+	{
+		return true; //still blocked
+	}
+}
+void UIElement::SetActive(bool newActive)
+{
+	active = newActive;
+}
+void UIElement::SetFocus(bool newFocus)
+{
+	//only one element can have focus
+	focus = newFocus; 
+	if(focus)
+	{
+		if(ParentElement != NULL)
+		{
+			ParentElement->SetFocus(false);
+		}
+		//Set Chilidren to not focus, but only lists have children
+	}
+}
+void UIElement::ToggleActive()
+{
+	active = !active;
+}
+void UIElement::ToggleFocus()
+{
+	focus = !focus;
+	if(focus)
+	{
+		if(ParentElement != NULL)
+		{
+			ParentElement->SetFocus(false);
+		}
+		//Set Chilidren to not focus, but only lists have children
+	}
+}
+bool UIElement::GetActive()
+{
+	return active;
+}
+bool UIElement::GetFocus()
+{
+	return focus;
+}
+void UIElement::SetPosToMousePos()
+{
+	pos = Engine->Input->GetMousePos();
+}
+void UIElement::SetPos(vec2 newPos)
+{
+	pos = newPos;
+}
+vec2 UIElement::GetPos()
+{
+	return pos;
+}
+int UIElement::GetWidth()
+{
+	return width;
+}
+int UIElement::GetHeight()
+{
+	return height;
+}
+void UIElement::SetWidth(int newWidth)
+{
+	width = newWidth;
+	spanHorizontal = false;
+}
+void UIElement::SetHeight(int newHeight)
+{
+	height = newHeight;
+	spanVertical = false;
+}
+void UIElement::SetParentElement(UIElement* newParent)
+{
+	ParentElement = newParent;
+}
+
+
+
+class VerticalList : public UIElement
+{
+	protected:
+	vector<UIElement*> ChildElements;
+	
+	public:
+	VerticalList(LazyEngine* newEngine);
+	virtual void Attach(UIElement* newElement);
+	virtual void Clear();
+	virtual int GetWidestChildWidth();
+	virtual void Update();
+	virtual bool HasChildren();
+	virtual bool CheckChildrenForFocus();
+	virtual void SetFocus(bool newFocus);
+	virtual void ToggleFocus();
+	virtual int HeightOfAllChildren();
+	virtual void SetHeightOfChildren(int newHeight);
+	virtual void SetPosToMousePos();
+	virtual void SetPos(vec2 newPos);
+	virtual void RefreshChildPos();
+};
+VerticalList::VerticalList(LazyEngine* newEngine) : UIElement(newEngine)
+{
+	Engine = newEngine;
+	pos = {0,0};
+	width = 150;
+	height = 50;
+	spanHorizontal = false;
+	spanVertical = false;
+	active = true; //visible and interactable
+	focus = true;
+	ParentElement = NULL;
+	BorderColor = {255,255,255,255};
+	BackgroundColor = {100,200,100,255};
+	lastInputTime = 0;
+	inputCoolDown = 200;
+}
+void VerticalList::Attach(UIElement* newElement)
+{
+	ChildElements.push_back(newElement);
+	newElement->SetPos(vec2(pos.x+3, pos.y+HeightOfAllChildren()-newElement->GetHeight()));
+	newElement->SetParentElement(this);
+	newElement->SetSpanHorizontal(true);
+	height = HeightOfAllChildren();
+}
+void VerticalList::Clear()
+{
+	ChildElements.clear();
+}
+int VerticalList::GetWidestChildWidth()
+{
+	int widest = 0;
+	for(unsigned int i = 0; i < ChildElements.size(); i++)
+	{
+		if(ChildElements[i]->GetWidth() > widest)
+		{
+			widest = ChildElements[i]->GetWidth();
+		}
+	}
+	return widest;
+}
+void VerticalList::Update()
+{
+	if(active)
+	{
+		Show();
+		for(unsigned int i = 0; i < ChildElements.size(); i++)
+		{
+			ChildElements[i]->Update();
+		}
+	}
+}
+bool VerticalList::HasChildren()
+{
+	if(ChildElements.size() > 0)
+	{
+		return true;
+	}
+	return false;
+}
+bool VerticalList::CheckChildrenForFocus()
+{
+	for(unsigned int i = 0; i < ChildElements.size(); i++)
+	{
+		if(ChildElements[i]->GetFocus() == true)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+void VerticalList::SetFocus(bool newFocus)
+{
+	//only one element can have focus
+	focus = newFocus; 
+	if(focus)
+	{
+		if(ParentElement != NULL)
+		{
+			ParentElement->SetFocus(false);
+		}
+		for(unsigned int i = 0; i < ChildElements.size(); i++)
+		{
+			ChildElements[i]->SetFocus(false);
+		}
+	}
+}
+void VerticalList::ToggleFocus()
+{
+	//only one element can have focus
+	focus = !focus; 
+	if(focus)
+	{
+		if(ParentElement != NULL)
+		{
+			ParentElement->SetFocus(false);
+		}
+		for(unsigned int i = 0; i < ChildElements.size(); i++)
+		{
+			ChildElements[i]->SetFocus(false);
+		}
+	}
+}
+int VerticalList::HeightOfAllChildren()
+{
+	int totalHeight = 0;
+	for(unsigned int i = 0; i < ChildElements.size(); i++)
+	{
+		totalHeight = totalHeight + ChildElements[i]->GetHeight();
+	}
+	return totalHeight;
+}
+void VerticalList::SetHeightOfChildren(int newHeight)
+{
+	for(unsigned int i = 0; i < ChildElements.size(); i++)
+	{
+		ChildElements[i]->SetHeight(newHeight);
+		ChildElements[i]->SetPos(vec2(pos.x, pos.y+newHeight*i));
+	}
+	height = HeightOfAllChildren();
+}
+void VerticalList::SetPosToMousePos()
+{
+	pos = Engine->Input->GetMousePos();
+	RefreshChildPos();
+	
+}
+void VerticalList::SetPos(vec2 newPos)
+{
+	pos = newPos;
+	RefreshChildPos();
+}
+void VerticalList::RefreshChildPos()
+{
+	for(unsigned int i = 0; i < ChildElements.size(); i++)
+	{
+		int currentHeight = 0;
+		for(unsigned int u = 0; u < i; u++)
+		{
+			currentHeight = currentHeight + ChildElements[u]->GetHeight();
+		}
+		ChildElements[i]->SetPos(vec2(pos.x+3, pos.y+currentHeight));
+	}
+}
+
+class Button : public UIElement
+{
+	protected:
+	SDL_Color TextColor;
+	string Caption;
+	UIElement* linkedElement;
+	
+	public:
+	Button(LazyEngine* newEngine);
+	virtual void Update();
+	virtual void SetTextColor(int R, int G, int B, int A);
+	virtual void SetCaption(string newCaption);
+	virtual void Attach(UIElement* newElement);
+	virtual void Show();
+	virtual bool Clicked(); //focus logic
+};
+Button::Button(LazyEngine* newEngine) : UIElement(newEngine)
+{
+	Caption = "empty";
+	TextColor = {255,255,255,255};
+	linkedElement = NULL;
+}
+void Button::Update()
+{
+	if(active)
+	{
+		Show();
+		if(linkedElement != NULL)
+		{
+			if(Clicked())
+			{
+				SetFocus(false);
+				linkedElement->SetActive(true);
+				linkedElement->SetFocus(true);
+				linkedElement->SetPosToMousePos();
+			}
+			if(linkedElement->GetActive())
+			{
+				linkedElement->Update();
+			}
+		}
+	}
+}
+void Button::SetTextColor(int R, int G, int B, int A)
+{
+	TextColor.r = R;
+	TextColor.g = G;
+	TextColor.b = B;
+	TextColor.a = A;
+}
+void Button::SetCaption(string newCaption)
+{
+	Caption = newCaption;
+}
+void Button::Attach(UIElement* newElement)
+{
+	linkedElement = newElement;
+}
+void Button::Show()
+{
+	if(MouseOver())
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, BackgroundColor.r, BackgroundColor.g, BackgroundColor.b);
+	}
+	else
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, BackgroundColor.r/2, BackgroundColor.g/2, BackgroundColor.b/2);
+	}
+	if(focus)
+	{
+		Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, 200, 0, 0);
+	}
+	else
+	{
+		Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, BorderColor.r, BorderColor.g, BorderColor.b);
+	}
+	Engine->Graphics->DrawRectangleGUI(pos.x+5, pos.y+5, width-5, height-5, BorderColor.r, BorderColor.g, BorderColor.b);
+	Engine->Graphics->DrawTextGUI(Caption, pos.x + 10, pos.y + height/2 - 4);
+}
+bool Button::Clicked()
+{
+	if(MouseOver() && Engine->Input->LeftMouse())
+	{
+		if(!CoolingDown())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+class Label : public UIElement
+{
+	protected:
+	SDL_Color TextColor;
+	string Caption;
+	
+	public:
+	Label(LazyEngine* newEngine);
+	virtual void SetTextColor(int R, int G, int B, int A);
+	virtual void SetCaption(string newCaption);
+	virtual void Show();
+};
+
+Label::Label(LazyEngine* newEngine) : UIElement(newEngine)
+{
+	Caption = "empty";
+	TextColor = {255,255,255,255};
+}
+void Label::SetTextColor(int R, int G, int B, int A)
+{
+	TextColor.r = R;
+	TextColor.g = G;
+	TextColor.b = B;
+	TextColor.a = A;
+}
+void Label::SetCaption(string newCaption)
+{
+	Caption = newCaption;
+}
+void Label::Show()
+{
+	if(MouseOver())
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, BackgroundColor.r, BackgroundColor.g, BackgroundColor.b);
+	}
+	else
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, BackgroundColor.r/2, BackgroundColor.g/2, BackgroundColor.b/2);
+	}
+	if(focus)
+	{
+		Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, 200, 0, 0);
+	}
+	else
+	{
+		Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, BorderColor.r, BorderColor.g, BorderColor.b);
+	}
+	Engine->Graphics->DrawTextGUI(Caption, pos.x + 10, pos.y + height/2 - 4);
+}
+
+class Entry : protected UIElement
+{
+	protected:
+	int CursorPos;
+	string InputString;
+	
+	public:
+	Entry(LazyEngine* newEngine);
+	virtual void Update();
+	virtual void Show();
+};
+
 /* The Idea is: You create and fill this Datastructure before Hand, for Example in the GameObjects Constructor
  * The Drawing and Checking is done in the mainloop. In the Update or Show Methods for example */
  
 /* Menu Is not a GameObject. It is supposed to exist in another GameOjbect*/
 
-class Menu
+/*class Menu
 {
 protected:
 	LazyEngine* Engine;
@@ -1010,7 +1602,7 @@ bool Menu::CheckChildrenForFocus()
 		}
 	}
 	return status;
-}
+}*/
 
 //=======================================================================================
 //=======================================================================================
@@ -1108,6 +1700,8 @@ class Map
 protected:
 	LazyEngine* Engine;
 	bool visible;
+	bool showGrid;
+	bool showBoder;
 public:
 	int width;
 	int height;
@@ -1124,6 +1718,8 @@ public:
 	void InitEmpty(int width, int height);
 	void ShowGrid();
 	void ShowEdge();
+	void SetShowBorder(bool newShowBorder);
+	void SetShowGrid(bool newShowBorder);
 };
 
 Map::Map(LazyEngine* newEngine)
@@ -1132,14 +1728,22 @@ Map::Map(LazyEngine* newEngine)
 	height = 0;
 	Engine = newEngine;
 	visible = false;
+	showBoder = false;
+	showGrid = false;
 }
 void Map::Update()
 {
 	if(visible)
 	{
 		Show();
-		ShowGrid();
-		ShowEdge();
+		if(showGrid)
+		{
+			ShowGrid();
+		}
+		if(showBoder)
+		{
+			ShowEdge();
+		}
 	}
 }
 void Map::Show()
@@ -1243,6 +1847,14 @@ void Map::ShowGrid()
 void Map::ShowEdge()
 {
 	Engine->Graphics->DrawRectangle(0,0, height*32, width*32, 0,100,0);
+}
+void Map::SetShowBorder(bool newShowBorder)
+{
+	showBoder = newShowBorder;
+}
+void Map::SetShowGrid(bool newShowGrid)
+{
+	showGrid = newShowGrid;
 }
 
 
@@ -1413,12 +2025,16 @@ protected:
 	int CurrentLayer;
 	TileSet* selectedTileSet;
 	TileID selectedTile;
-	Menu* MainMenu;
-	Menu* FileMenu;
-	Menu* LayerMenu;
-	Menu* ViewMenu;
-	Menu* TileSetsMenu;
-	Menu* thirdLevelMenu;
+	VerticalList* List1;
+	VerticalList* List2;
+	Label* test1label;
+	Label* test2label;
+	Label* test3label;
+	Label* test4label;
+	Label* test5label;
+	Label* test6label;
+	Button* test1Button;
+	Button* test2Button;
 	
 public:
 	MapEditor(LazyEngine* newEngine);
@@ -1441,24 +2057,30 @@ MapEditor::MapEditor(LazyEngine* newEngine)
 	mode = 1; //0 = off; 1 = MapMode; 2 = TileSetMode;
 	CurrentLayer = 1;
 	selectedTileSet = NULL;
-	MainMenu = new Menu(Engine);
-	MainMenu->NewEntries({"File","Layer","View","TileSets","Map"});
-	MainMenu->ChangeOrientation();
-	FileMenu = new Menu(Engine);
-	FileMenu->NewEntries({"Load","Save","Quit"});
-	LayerMenu = new Menu(Engine);
-	LayerMenu->NewEntries({"Select Sub","Select Ground","Select Object"});
-	ViewMenu = new Menu(Engine);
-	ViewMenu->NewEntries({"Show Grid","Disable Grid"});
-	TileSetsMenu = new Menu(Engine);
-	TileSetsMenu->NewEntries({"Load", "Show Current Set"});
-	MainMenu->AddSubMenu(FileMenu, 0);
-	MainMenu->AddSubMenu(LayerMenu, 1);
-	MainMenu->AddSubMenu(ViewMenu, 2);
-	MainMenu->AddSubMenu(TileSetsMenu, 3);
-	thirdLevelMenu = new Menu(Engine);
-	thirdLevelMenu->NewEntries({"nur","ein","test"});
-	LayerMenu->AddSubMenu(thirdLevelMenu, 1);
+	
+	List1 = new VerticalList(Engine);
+	List2 = new VerticalList(Engine);
+	test1label = new Label(Engine);
+	test2label = new Label(Engine);
+	test3label = new Label(Engine);
+	test4label = new Label(Engine);
+	test5label = new Label(Engine);
+	test6label = new Label(Engine);
+	test1Button = new Button(Engine);
+	test2Button = new Button(Engine);
+	
+	List1->Attach(test1label);
+	List1->Attach(test2label);
+	List1->Attach(test3label);
+	List1->Attach(test1Button);
+	
+	List2->Attach(test4label);
+	List2->Attach(test5label);
+	List2->Attach(test6label);
+	List2->Attach(test2Button);
+	
+	test1Button->Attach(List2);
+
 }
 void MapEditor::InitMap(int newWidth, int newHeight)
 {
@@ -1467,6 +2089,8 @@ void MapEditor::InitMap(int newWidth, int newHeight)
 void MapEditor::AssignMap(Map* newMap)
 {
 	CurrentMap = newMap;
+	CurrentMap->SetShowBorder(true);
+	CurrentMap->SetShowGrid(true);
 }
 void MapEditor::ClearMap()
 {
@@ -1494,8 +2118,6 @@ void MapEditor::DrawTileSet(string tileSetName)
 }
 void MapEditor::Show()
 {
-	
-	
 	if(mode == 0)
 	{
 	}
@@ -1529,23 +2151,7 @@ void MapEditor::SelectTileSet(int newID)
 void MapEditor::Update()
 {
 	//Menu-------------------------------
-	MainMenu->Update();
-	if(FileMenu->Clicked(2))
-	{
-		Engine->SetQuit(true);
-	}
-	
-	if(TileSetsMenu->Clicked(1))
-	{
-		if(mode == 1)
-		{
-			mode = 2;
-		}
-		else if(mode == 2)
-		{
-			mode = 1;
-		}
-	}
+	List1->Update();
 	//-----------------------------------
 	
 	if(mode == 2)
