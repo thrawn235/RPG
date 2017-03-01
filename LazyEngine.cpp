@@ -4,6 +4,7 @@ LazyEngine::LazyEngine()
 {
 	Graphics = new GraphicsEngine;
 	Input = new InputEngine;
+	Menu = new MenuEngine(this);
 	quit = false;
 }
 void LazyEngine::PollEvents()

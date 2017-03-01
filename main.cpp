@@ -13,14 +13,11 @@
 using namespace std;
 using namespace glm;
 
-#include "Input.h"
-#include "Graphics.h"
 #include "LazyEngine.h"
 #include "Map.h"
 #include "Cursor.h"
 #include "MapEditor.h"
 #include "GameObject.h"
-#include "Menu.h"
 
 
 //=======================================================================================
@@ -56,38 +53,11 @@ int main( int argc, char* args[] )
 	Camera* Cam = Engine->Graphics->GetCamera();
 	Cam->SetPos(vec2{-10,-10});
 	
-	
-	MenuHandler* testmenu = new MenuHandler(Engine);
-	
-	Label* label1 = new Label(testmenu);
-	Label* label2 = new Label(testmenu);
-	Label* label3 = new Label(testmenu);
-	Label* label4 = new Label(testmenu);
-	Label* label5 = new Label(testmenu);
-	Label* label6 = new Label(testmenu);
-	
-	Button* Button1 = new Button(testmenu);
-	Button* Button2 = new Button(testmenu);
-	Button* Button3 = new Button(testmenu);
-	Button* Button4 = new Button(testmenu);
-	
-	VerticalList* List1 = new VerticalList(testmenu);
-	VerticalList* List2 = new VerticalList(testmenu);
-	
-	List1->Attach(label1);
-	List1->Attach(label2);
-	List1->Attach(label3);
-	List1->Attach(Button1);
-	List1->Attach(Button2);
-	List1->SetActive(true);
-	
-	List2->Attach(label4);
-	List2->Attach(label5);
-	List2->Attach(label6);
-	List2->Attach(Button3);
-	List2->Attach(Button4);
-	
-	Button1->Attach(List2);
+	//menu---------------
+	UIObject* Button = new UIObject(Engine);
+	UIObject* Button2 = new UIObject(Engine);
+	Button2->SetPos(vec2(100, 30));
+	//-------------------
 	
 	
 	//main loop
@@ -103,21 +73,16 @@ int main( int argc, char* args[] )
 		}
 		
 		Engine->Graphics->BeginRender();
-		
-		
-		
+					
 		currentMap->Update();
 		Pointer->Update();
-		
-		//Engine->Graphics->DrawText("noch ein test", 0,0);
 		
 		Test->Update();		
 		
 		Editor->Update();
 		MousePointer->Update();
 		
-		testmenu->Update();
-		
+		Engine->Menu->Update();
 		
 		Engine->Graphics->EndRender();
 		

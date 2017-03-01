@@ -1,8 +1,13 @@
 #pragma once
 
+#include <SDL2/SDL.h>
+
+#include "LazyEngine.h"
 #include "Cursor.h"
 #include "Map.h"
 #include <iostream>
+
+class LazyEngine;
 
 
 

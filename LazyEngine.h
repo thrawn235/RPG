@@ -1,27 +1,38 @@
 #pragma once
 
-#include "Input.h"
-#include "Graphics.h"
+#include <SDL2/SDL.h>
+#include <vector>
+using namespace std;
+
+
+
+class GameObject;
+class MenuEngine;
+class GraphicsEngine;
+class InputEngine;
 
 //------------------------Lazy Engine.h-----------------
-class GameObject;
+
 
 class LazyEngine
 {
+
+
 protected:
 	vector<GameObject*> GameObjects;
 	bool quit;
 public:
 	GraphicsEngine* Graphics;
 	//SoundEngine* Sound;
-	//TimeEngine* Time;
 	InputEngine* Input;
-	//FileEngine* File;
-	//TextEngine* Text;
-	//NetworkEngine* Network;
 	LazyEngine();
+	MenuEngine* Menu;
 	void PollEvents();
 	void SetQuit(bool newQuit);
 	bool End();
 };
+
+#include "Graphics.h"
+#include "Input.h"
+#include "Menu.h"
 //-----------------------------------------------------
