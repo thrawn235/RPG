@@ -56,7 +56,11 @@ int main( int argc, char* args[] )
 	//menu---------------
 	UIObject* Button = new UIObject(Engine);
 	UIObject* Button2 = new UIObject(Engine);
+	UIContainer* Container = new UIContainer(Engine);
+	UIElement* Element = new UIElement(Engine);
+	Element->SetPos(vec2(150, 150));
 	Button2->SetPos(vec2(100, 30));
+	Container->SetChild(Element);
 	//-------------------
 	
 	
