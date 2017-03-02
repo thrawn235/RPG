@@ -1,5 +1,4 @@
 #include "UIObject.h"
-#include <iostream>
 
 UIObject::UIObject(LazyEngine* newEngine)
 {
@@ -13,6 +12,7 @@ UIObject::UIObject(LazyEngine* newEngine)
 	visible = true;
 	spanHorizontal = false;
 	spanVertical = false;
+	lockHirarchy = false;
 	Engine->Menu->AddObject(this);
 	hirarchy = Engine->Menu->GetHighestHirarchy() + 1;
 }
@@ -22,7 +22,11 @@ int UIObject::GetHirarchy()
 }
 void UIObject::SetHirarchy(int newHirarchy)
 {
-	hirarchy = newHirarchy;
+	if(!lockHirarchy)
+	{
+		lockHirarchy = true;
+		hirarchy = newHirarchy;
+	}
 }
 vec2 UIObject::GetPos()
 {
@@ -87,11 +91,12 @@ int UIObject::GetUsableAreaHeight(UIObject* Caller)
 
 void UIObject::Update()
 {
+	lockHirarchy = false;
 	if(Clicked())
 	{
 		if(hirarchy < Engine->Menu->GetHighestHirarchy())
 		{
-			hirarchy = Engine->Menu->GetHighestHirarchy() +1;
+			SetHirarchy(Engine->Menu->GetHighestHirarchy() +1);
 		}
 	}
 	Show();
@@ -177,11 +182,12 @@ void UIElement::Show()
 }
 void UIElement::Update()
 {
+	lockHirarchy = false;
 	if(Clicked())
 	{
 		if(hirarchy < Engine->Menu->GetHighestHirarchy())
 		{
-			hirarchy = Engine->Menu->GetHighestHirarchy() +1;
+			SetHirarchy(Engine->Menu->GetHighestHirarchy() +1);
 			if(parent != NULL)
 			{
 				parent->SetHirarchy(hirarchy - 1);
@@ -268,13 +274,169 @@ void UIContainer::Show()
 }
 void UIContainer::Update()
 {
+	lockHirarchy = false;
 	if(Clicked())
 	{
 		if(hirarchy < Engine->Menu->GetHighestHirarchy())
 		{
-			hirarchy = Engine->Menu->GetHighestHirarchy() + 1;
+			SetHirarchy(Engine->Menu->GetHighestHirarchy() + 1);
+			child->SetHirarchy(hirarchy + 1);
 		}
 	}
 	
+	Show();
+}
+
+
+
+
+
+
+
+
+
+UILabel::UILabel(LazyEngine* newEngine) : UIElement(newEngine)
+{
+	caption = "default";
+}
+void UILabel::SetCaption(string newCaption)
+{
+	caption = newCaption;
+}
+	
+void UILabel::Show()
+{
+	if(MouseOver())
+	{
+		if(Clicked())
+		{
+			Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, 150,50,50);
+		}
+		else
+		{
+			Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, 100,100,100);
+		}
+	}
+	else
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, 50,50,50);
+	}
+	Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, 200,200,200);
+	Engine->Graphics->DrawTextGUI(caption, pos.x + 20, pos.y + height/2 - 5);
+}
+void UILabel::Update()
+{
+	lockHirarchy = false;
+	if(Clicked())
+	{
+		if(hirarchy < Engine->Menu->GetHighestHirarchy())
+		{
+			SetHirarchy(Engine->Menu->GetHighestHirarchy() +1);
+			if(parent != NULL)
+			{
+				parent->SetHirarchy(hirarchy - 1);
+			}
+		}
+	}
+	
+	if(parent != NULL)
+	{
+		pos = parent->GetUsableAreaPos(this);
+		if(spanHorizontal)
+		{
+			width = parent->GetUsableAreaWidth(this);
+		}
+		if(spanVertical)
+		{
+			height = parent->GetUsableAreaHeight(this);
+		}
+	}
+	else
+	{
+		if(spanHorizontal)
+		{
+			width = Engine->Graphics->GetHorizontalResolution();
+		}
+		if(spanVertical)
+		{
+			height = Engine->Graphics->GetVerticalResolution();
+		}
+	}
+	Show();
+}
+
+
+
+
+
+
+UIButton::UIButton(LazyEngine* newEngine) : UIElement(newEngine)
+{
+	caption = "default";
+}
+void UIButton::SetCaption(string newCaption)
+{
+	caption = newCaption;
+}
+	
+void UIButton::Show()
+{
+	if(MouseOver())
+	{
+		if(Clicked())
+		{
+			Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, 150,50,50);
+		}
+		else
+		{
+			Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, 100,100,100);
+		}
+	}
+	else
+	{
+		Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, 50,50,50);
+	}
+	Engine->Graphics->DrawRectangleGUI(pos.x, pos.y, width, height, 200,200,200);
+	Engine->Graphics->DrawRectangleGUI(pos.x+5, pos.y+5, width-10, height-10, 200,200,200);
+	Engine->Graphics->DrawTextGUI(caption, pos.x + 20, pos.y + height/2 - 5);
+}
+void UIButton::Update()
+{
+	lockHirarchy = false;
+	if(Clicked())
+	{
+		if(hirarchy < Engine->Menu->GetHighestHirarchy())
+		{
+			SetHirarchy(Engine->Menu->GetHighestHirarchy() +1);
+			if(parent != NULL)
+			{
+				parent->SetHirarchy(hirarchy - 1);
+			}
+		}
+	}
+	
+	if(parent != NULL)
+	{
+		pos = parent->GetUsableAreaPos(this);
+		if(spanHorizontal)
+		{
+			width = parent->GetUsableAreaWidth(this);
+		}
+		if(spanVertical)
+		{
+			height = parent->GetUsableAreaHeight(this);
+		}
+	}
+	else
+	{
+		if(spanHorizontal)
+		{
+			width = Engine->Graphics->GetHorizontalResolution();
+		}
+		if(spanVertical)
+		{
+			height = Engine->Graphics->GetVerticalResolution();
+		}
+	}
 	Show();
 }

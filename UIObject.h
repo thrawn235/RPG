@@ -15,6 +15,7 @@ class UIObject
 	bool visible;
 	bool spanHorizontal, spanVertical;
 	int timeLastClicked;
+	bool lockHirarchy;
 	
 	public:
 	UIObject(LazyEngine* newEngine);
@@ -70,6 +71,53 @@ class UIContainer : public UIObject
 	virtual void Show();
 	virtual void Update();
 };
+
+class UILabel : public UIElement
+{
+	protected:
+	string caption;
+	
+	public:
+	UILabel(LazyEngine* newEngine);
+	virtual void SetCaption(string newCaption);
+	
+	virtual void Show();
+	virtual void Update();
+};
+
+class UIButton : public UIElement
+{
+	protected:
+	string caption;
+	
+	public:
+	UIButton(LazyEngine* newEngine);
+	virtual void SetCaption(string newCaption);
+	
+	virtual void Show();
+	virtual void Update();
+};
+
+/*class UIList : public UIElement
+{
+	protected:
+	vector<UIElement*> childObjects;
+	
+	public:
+	UIList(LazyEngine* newEngine);
+	virtual void Show();
+	virtual void Update();
+};
+
+class UIInput : public UIElement
+{
+	protected:
+	public:
+	UIInput(LazyEngine* newEngine);
+	virtual void Show();
+	virtual void Update();
+};*/
+
 
 
 #include <SDL2/SDL.h>

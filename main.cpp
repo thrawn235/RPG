@@ -54,13 +54,16 @@ int main( int argc, char* args[] )
 	Cam->SetPos(vec2{-10,-10});
 	
 	//menu---------------
-	UIObject* Button = new UIObject(Engine);
 	UIObject* Button2 = new UIObject(Engine);
 	UIContainer* Container = new UIContainer(Engine);
 	UIElement* Element = new UIElement(Engine);
+	UILabel* Label = new UILabel(Engine);
+	UIButton* Button = new UIButton(Engine);
 	Element->SetPos(vec2(150, 150));
 	Button2->SetPos(vec2(100, 30));
-	Container->SetChild(Element);
+	Container->SetChild(Button);
+	Container->SetPos(vec2(200,200));
+	Container->SetHeight(120);
 	//-------------------
 	
 	
