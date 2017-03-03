@@ -59,11 +59,14 @@ int main( int argc, char* args[] )
 	UIElement* Element = new UIElement(Engine);
 	UILabel* Label = new UILabel(Engine);
 	UIButton* Button = new UIButton(Engine);
+	UIList* List = new UIList(Engine);
 	Element->SetPos(vec2(150, 150));
 	Button2->SetPos(vec2(100, 30));
-	Container->SetChild(Button);
+	Container->SetChild(List);
 	Container->SetPos(vec2(200,200));
 	Container->SetHeight(120);
+	List->AddChild(Button);
+	List->AddChild(Label);
 	//-------------------
 	
 	

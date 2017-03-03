@@ -98,7 +98,7 @@ class UIButton : public UIElement
 	virtual void Update();
 };
 
-/*class UIList : public UIElement
+class UIList : public UIElement
 {
 	protected:
 	vector<UIElement*> childObjects;
@@ -107,9 +107,13 @@ class UIButton : public UIElement
 	UIList(LazyEngine* newEngine);
 	virtual void Show();
 	virtual void Update();
+	virtual vec2 GetUsableAreaPos(UIObject* Caller);
+	virtual int GetUsableAreaWidth(UIObject* Caller);
+	virtual int GetUsableAreaHeight(UIObject* Caller);
+	virtual void AddChild(UIElement* newChildObject);
 };
 
-class UIInput : public UIElement
+/*class UIInput : public UIElement
 {
 	protected:
 	public:

@@ -440,3 +440,87 @@ void UIButton::Update()
 	}
 	Show();
 }
+
+
+
+
+
+
+UIList::UIList(LazyEngine* newEngine) : UIElement(newEngine)
+{
+}
+void UIList::Show()
+{
+	Engine->Graphics->DrawFilledRectangleGUI(pos.x, pos.y, width, height, 50,50,50);
+}
+void UIList::Update()
+{
+	lockHirarchy = false;
+	if(Clicked())
+	{
+		if(hirarchy < Engine->Menu->GetHighestHirarchy())
+		{
+			SetHirarchy(Engine->Menu->GetHighestHirarchy() +1);
+			if(parent != NULL)
+			{
+				parent->SetHirarchy(hirarchy - 1);
+			}
+			for(unsigned int i = 0; i < childObjects.size(); i++)
+			{
+				childObjects[i]->SetHirarchy(hirarchy +1);
+			}
+		}
+	}
+	
+	if(parent != NULL)
+	{
+		pos = parent->GetUsableAreaPos(this);
+		if(spanHorizontal)
+		{
+			width = parent->GetUsableAreaWidth(this);
+		}
+		if(spanVertical)
+		{
+			height = parent->GetUsableAreaHeight(this);
+		}
+	}
+	else
+	{
+		if(spanHorizontal)
+		{
+			width = Engine->Graphics->GetHorizontalResolution();
+		}
+		if(spanVertical)
+		{
+			height = Engine->Graphics->GetVerticalResolution();
+		}
+	}
+	Show();
+}
+vec2 UIList::GetUsableAreaPos(UIObject* Caller)
+{
+	for(unsigned int i = 0; i < childObjects.size(); i++)
+	{
+		if(Caller == childObjects[i])
+		{
+			return vec2(pos.x, ((height/childObjects.size())*i)+pos.y);
+		}
+	}
+	return vec2(0,0);
+}
+int UIList::GetUsableAreaWidth(UIObject* Caller)
+{
+	return width;
+}
+int UIList::GetUsableAreaHeight(UIObject* Caller)
+{
+	return height / childObjects.size();
+}
+void UIList::AddChild(UIElement* newChildObject)
+{
+	childObjects.push_back(newChildObject);
+	newChildObject->SetParent(this);
+	newChildObject->SetSpanHorizontal(true);
+	newChildObject->SetSpanVertical(true);
+	newChildObject->SetHirarchy(hirarchy + 1);
+}
